@@ -2,6 +2,7 @@
 """Copy the static site and set absolute sharing URLs for its deployment."""
 
 import argparse
+from hashlib import sha256
 from html import escape
 from pathlib import Path
 import shutil
@@ -25,6 +26,10 @@ def main():
     if missing:
         parser.error('Missing static assets: ' + ', '.join(missing))
     source = (root / 'index.html').read_text(encoding='utf-8')
+    # A new asset URL prevents mobile browsers from keeping older animation code.
+    for name in ('style.css', 'main.js'):
+        version = sha256((root / 'assets' / name).read_bytes()).hexdigest()[:12]
+        source = source.replace('assets/' + name + '"', 'assets/' + name + '?v=' + version + '"')
     if base_url:
         image_url = escape(base_url + 'assets/og-image.png', quote=True)
         source = source.replace('content="assets/og-image.png"', 'content="' + image_url + '"')
